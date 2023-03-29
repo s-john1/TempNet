@@ -44,20 +44,27 @@ def load_dataset(filepath):
                     dataset.append(packet_values)
 
 
-def calculate_average():
+def calculate_average(limit=None):
     averages = {}
 
+    i = 0
+
     for data in dataset:
+        if limit is not None and i >= limit:
+            break
+
         if data[0] in averages:
             # Add new value to running average
             averages[data[0]] = (averages[data[0]] + data[1]) / 2
         else:
             averages[data[0]] = data[1]
 
-    print(averages)
+        i += 1
+
+    return averages
 
 
 if __name__ == '__main__':
     load_dataset("data.txt")
     print(dataset)
-    calculate_average()
+    print(calculate_average())
