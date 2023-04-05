@@ -46,25 +46,30 @@ def load_dataset(filepath):
 
 def calculate_average(limit=None):
     averages = {}
+    i = {}
 
-    i = 0
+    # Loop through dataset starting with last entries
+    for data in reversed(dataset):
+        id = data[0]
+        value = data[1]
 
-    for data in dataset:
-        if limit is not None and i >= limit:
-            break
+        if id in averages:
+            # Stop counting the averages if a set limit is reached for the device
+            if limit is not None and i[id] >= limit:
+                continue
 
-        if data[0] in averages:
             # Add new value to running average
-            averages[data[0]] = (averages[data[0]] + data[1]) / 2
+            averages[id] = (averages[id] + value) / 2
         else:
-            averages[data[0]] = data[1]
+            averages[id] = value
+            i[id] = 0
 
-        i += 1
+        i[id] += 1
 
     return averages
 
 
 if __name__ == '__main__':
     load_dataset("data.txt")
-    print(dataset)
-    print(calculate_average())
+    #print(dataset)
+    print(calculate_average(20))
