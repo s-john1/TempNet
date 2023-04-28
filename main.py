@@ -44,6 +44,27 @@ def load_dataset(filepath):
                     dataset.append(packet_values)
 
 
+def filter_dataset(limit=None):
+    filtered = {}
+
+    # Loop through dataset starting with last entries
+    for data in reversed(dataset):
+        id = data[0]
+        value = data[1]
+
+        if id in filtered:
+            # Stop counting the averages if a set limit is reached for the device
+            if limit is not None and len(filtered[id]) >= limit:
+                continue
+
+            # Add new value to dataset
+            filtered[id].append(value)
+        else:
+            filtered[id] = []
+
+    return filtered
+
+
 def calculate_average(limit=None):
     averages = {}
     i = {}
