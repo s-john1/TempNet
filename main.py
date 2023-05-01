@@ -1,6 +1,8 @@
 import re
+import statistics
 
-dataset = []
+dataset = [] # A list of the each individual packet, ordered by time
+debug = False
 
 
 def check_packet(packet):
@@ -41,7 +43,7 @@ def load_dataset(filepath):
                 packet_values = check_packet(packet_data[0])
 
                 if packet_values:
-                    dataset.append(packet_values)
+                    add_value(packet_values[0], packet_values[1])
 
 
 def filter_dataset(limit=None):
@@ -56,41 +58,78 @@ def filter_dataset(limit=None):
             # Stop counting the averages if a set limit is reached for the device
             if limit is not None and len(filtered[id]) >= limit:
                 continue
-
-            # Add new value to dataset
-            filtered[id].append(value)
         else:
             filtered[id] = []
+
+        # Add new value to dataset
+        filtered[id].append(value)
 
     return filtered
 
 
-def calculate_average(limit=None):
-    averages = {}
-    i = {}
+def add_value(device, value):
+    # We need an appropriate sample size before being able to accurately accept/reject packets
+    # so, automatically accept the first x packets
+    if len(dataset) <= 10:
+        dataset.append((device, value))
+        # TODO: add debug here?
+        return
 
-    # Loop through dataset starting with last entries
-    for data in reversed(dataset):
-        id = data[0]
-        value = data[1]
 
-        if id in averages:
-            # Stop counting the averages if a set limit is reached for the device
-            if limit is not None and i[id] >= limit:
-                continue
+    # Fetch last x amount of accepted values for each device
+    filtered = filter_dataset(1)
+    raw_values = get_raw_values(filtered)
 
-            # Add new value to running average
-            averages[id] = (averages[id] + value) / 2
-        else:
-            averages[id] = value
-            i[id] = 0
+    print(device, value)
+    print(raw_values)
 
-        i[id] += 1
+    # Get the average value across every sensor in the filtered dataset
+    average = calculate_average(raw_values)
+    print("Average:", average)
 
-    return averages
+    std_dev = statistics.stdev(raw_values)
+    print("Standard Dev:", std_dev)
+
+    if value < average - std_dev*2 or value > average + std_dev*2:
+        # Reject if not witin x standard deviations
+        print("Rejecting value", value, "from device", device)
+    else:
+        print("Accepting value", value, "from device", device)
+        dataset.append((device, value))
+
+    print()
+    if debug:
+        output_info()
+
+
+def get_raw_values(data):
+    # Will retrieve the raw values from a dataset
+
+    values = []
+    for device in data:
+        values += data[device]
+
+    return values
+
+
+def output_info():
+    print(dataset)
+
+
+def calculate_average(data):
+    # Don't run if dataset is empty
+    if not data:
+        return None
+
+    total = 0
+    i = 0
+
+    for value in data:
+        total += value
+        i += 1
+
+    return total / i
 
 
 if __name__ == '__main__':
     load_dataset("data.txt")
-    #print(dataset)
-    print(calculate_average(20))
