@@ -4,6 +4,7 @@ import statistics
 dataset = [] # A list of the each individual packet, ordered by time
 debug = False
 
+count = [0, 0]
 
 def check_packet(packet):
     packet_data = packet.split(',')
@@ -55,7 +56,7 @@ def filter_dataset(limit=None):
         value = data[1]
 
         if id in filtered:
-            # Stop counting the averages if a set limit is reached for the device
+            # Stop counting if a set limit is reached for the device
             if limit is not None and len(filtered[id]) >= limit:
                 continue
         else:
@@ -72,12 +73,11 @@ def add_value(device, value):
     # so, automatically accept the first x packets
     if len(dataset) <= 10:
         dataset.append((device, value))
-        # TODO: add debug here?
         return
 
 
     # Fetch last x amount of accepted values for each device
-    filtered = filter_dataset(1)
+    filtered = filter_dataset(3)
     raw_values = get_raw_values(filtered)
 
     print(device, value)
@@ -93,10 +93,11 @@ def add_value(device, value):
     if value < average - std_dev*2 or value > average + std_dev*2:
         # Reject if not witin x standard deviations
         print("Rejecting value", value, "from device", device)
+        count[0] += 1  # Add to count
     else:
         print("Accepting value", value, "from device", device)
         dataset.append((device, value))
-
+        count[1] += 1  # Add to count
     print()
     if debug:
         output_info()
@@ -132,4 +133,8 @@ def calculate_average(data):
 
 
 if __name__ == '__main__':
-    load_dataset("data.txt")
+    load_dataset("example_data_4.txt")
+    #load_dataset("data.txt")
+    print("Rejected:", count[0])
+    print("Accepted:", count[1])
+
